@@ -73,4 +73,20 @@ public class PopulationDAO {
         r.setAnomaly(rs.getBoolean("is_anomaly"));
         return r;
     }
+
+    /**
+     * Проверяет, есть ли запись для (cityId, year).
+     */
+    public boolean exists(int cityId, int year) throws SQLException {
+        String sql = "SELECT COUNT(*) FROM population WHERE city_id = ? AND year = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, cityId);
+            pstmt.setInt(2, year);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) return rs.getInt(1) > 0;
+            }
+        }
+        return false;
+    }
 }
