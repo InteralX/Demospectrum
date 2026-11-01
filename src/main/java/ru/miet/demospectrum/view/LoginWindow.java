@@ -1,9 +1,22 @@
 package ru.miet.demospectrum.view;
-import ru.miet.demospectrum.service.ErrMsgLog;
-import ru.miet.demospectrum.config.Preloader;
+import java.awt.Font;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
 
-import javax.swing.*;
-import java.awt.*;
+import javax.swing.BorderFactory;
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JPasswordField;
+import javax.swing.JTextField;
+import javax.swing.SwingConstants;
+import javax.swing.SwingUtilities;
+
+import ru.miet.demospectrum.config.Preloader;
+import ru.miet.demospectrum.service.ErrMsgLog;
 
 public class LoginWindow extends JFrame {
 
@@ -83,19 +96,40 @@ public class LoginWindow extends JFrame {
         if (login.isEmpty() || password.isEmpty()) {
             logger.warn("Попытка входа с пустым логином или паролем");
             showError("Введите логин и пароль!");
+            passwordField.setText("");
             return;
         }
 
-        String expectedLogin = Preloader.get("user.name");
-        String expectedPassword = Preloader.get("user.password");
+        boolean authenticated = false;
+        String matchedGroup = null;
 
-        if (login.equals(expectedLogin) && password.equals(expectedPassword)) {
-            logger.info("Успешный вход: " + login);
-            SwingUtilities.invokeLater(() -> {
-                MainWindow mainWindow = new MainWindow();
-                mainWindow.setVisible(true);
-                dispose();
-            });
+        // Проверяем пользователей по порядку
+        for (int i = 1; i <= 3; i++) {
+            String expectedLogin = Preloader.get("user." + i + ".name");
+            
+            // Если ключ не найден, значит, список пользователей закончился
+            if (expectedLogin == null) {
+                break;
+            }
+
+            String expectedPassword = Preloader.get("user." + i + ".password");
+            
+            if (login.equals(expectedLogin) && password.equals(expectedPassword)) {
+                authenticated = true;
+                matchedGroup = Preloader.get("user." + i + ".group");
+                break;
+            }
+        }
+
+        if (authenticated) {
+            logger.info("Успешный вход: " + login + " (группа: " + matchedGroup + ")");
+            
+            passwordField.setText("");
+
+            // Передаем логин и группу в конструктор MainWindow
+            MainWindow mainWindow = new MainWindow(login, matchedGroup);
+            mainWindow.setVisible(true);
+            dispose();
         } else {
             logger.warn("Неудачная попытка входа: логин='" + login + "'");
             showError("Неверный логин или пароль!");
